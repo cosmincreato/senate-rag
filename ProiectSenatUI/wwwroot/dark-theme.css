@@ -1,0 +1,54 @@
+:root {
+    --bs-body-bg: #181a1b;
+    --bs-body-color: #e4e6eb;
+    --bs-card-bg: #222325;
+    --bs-card-color: #e4e6eb;
+    --bs-navbar-bg: #23272b;
+    --bs-navbar-color: #f1f3f6;
+    --bs-border-color: #33363a;
+}
+
+body, .app, .main, .container, .navbar, .sidebar, .card, .dropdown-menu {
+    background-color: var(--bs-body-bg) !important;
+    color: var(--bs-body-color) !important;
+}
+
+.navbar, .navbar-brand, .navbar-nav .nav-link, .sidebar, .sidebar-header {
+    background-color: var(--bs-navbar-bg) !important;
+    color: var(--bs-navbar-color) !important;
+}
+
+.card {
+    background-color: var(--bs-card-bg) !important;
+    color: var(--bs-card-color) !important;
+    border-color: var(--bs-border-color) !important;
+}
+
+input, textarea, select {
+    background-color: #222325 !important;
+    color: #f1f3f6 !important;
+    border-color: #33363a !important;
+}
+
+.btn {
+    color: #fff;
+    background: #2563eb;
+    border: none;
+}
+
+.btn:hover {
+    background: #1e40af;
+}
+
+.alert {
+    background-color: #23272b !important;
+    color: #e4e6eb !important;
+    border-color: #33363a !important;
+}
+
+::-webkit-scrollbar {
+    background: #23272b;
+}
+::-webkit-scrollbar-thumb {
+    background: #33363a;
+}

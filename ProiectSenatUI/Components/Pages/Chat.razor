@@ -1,0 +1,242 @@
+@page "/chat"
+@using ProiectSenatCore
+@inject ChatService ChatService
+@rendermode InteractiveServer
+
+<PageTitle>Chat</PageTitle>
+
+<section>
+  <div class="container py-5">
+
+    <div class="row d-flex justify-content-center">
+      <div class="col-md-10 col-lg-8">
+
+        <div class="card" id="chat1" style="border-radius: 15px;">
+          <div
+            class="card-header d-flex justify-content-between align-items-center p-3 bg-primary text-white border-bottom-0"
+            style="border-top-left-radius: 15px; border-top-right-radius: 15px;">
+            <p class="mb-0 fw-bold" style="font-size: 1.6em">Chat</p>
+          </div>
+          <div class="card-body">
+
+            @* Chat messages container *@
+            <div id="chat-messages" style="height: 400px; overflow-y: auto; margin-bottom: 20px;">
+              
+              @* Welcome message *@
+              <div class="d-flex flex-row justify-content-start mb-4">
+                <div class="p-3 ms-3" style="border-radius: 15px; background-color: rgba(57, 192, 237,.2);">
+                  <p class="small mb-0">
+                    <strong>AI:</strong> Salut! Cum te pot ajuta azi?
+                  </p>
+                </div>
+              </div>
+
+              @* Chat history *@
+              @foreach (var message in ChatHistory)
+              {
+                @if (message.IsUser)
+                {
+                  <!-- User message -->
+                  <div class="d-flex flex-row justify-content-end mb-4">
+                    <div class="p-3 me-3 border bg-body-tertiary" style="border-radius: 15px; max-width: 70%;">
+                      <p class="small mb-0"><strong>You:</strong> @message.Content</p>
+                    </div>
+                  </div>
+                }
+                else
+                {
+                  <!-- Bot message -->
+                  <div class="d-flex flex-row justify-content-start mb-4">
+                    <div class="p-3 ms-3" style="border-radius: 15px; background-color: @(message.IsError ? "rgba(255, 193, 193, 0.3)" : "rgba(57, 192, 237,.2)"); max-width: 80%;">
+                      <p class="small mb-0">
+                        <strong>AI:</strong> @message.Content
+                      </p>
+                      
+                      @if (!message.IsError && message.RelevantDocuments?.Any() == true)
+                      {
+                        <div class="mt-2">
+                          <small class="text-muted">
+                            <strong>Surse:</strong>
+                            @foreach (var doc in message.RelevantDocuments.Take(3))
+                            {
+                              <span class="badge bg-secondary me-1">Legea @doc.LawNumber Doc. @doc.LawCode - Scor: @doc.Score.ToString("F2")</span>
+                            }
+                          </small>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              }
+
+              @* Loading message *@
+              @if (IsProcessing)
+              {
+                <div class="d-flex flex-row justify-content-start mb-4">
+                  <div class="p-3 ms-3" style="border-radius: 15px; background-color: rgba(57, 192, 237,.2);">
+                    <p class="small mb-0">
+                      <strong>AI:</strong> 
+                      <span class="spinner-border spinner-border-sm me-2" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                      </span>
+                      Processing your query...
+                    </p>
+                  </div>
+                </div>
+              }
+
+            </div>
+
+            @* Input form *@
+            <div class="row">
+              <div class="col-12">
+                <div class="input-group">
+                  <textarea @bind="CurrentMessage" 
+            class="form-control"
+            rows="3"
+            placeholder="Pune o intrebare..." 
+            disabled="@IsProcessing"></textarea>
+                  @if (IsProcessing)
+                  {
+                    <span class="input-group-text ms-2" style="background: none; border: none;">
+                      <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    </span>
+                  }
+                  else
+                  {
+                    <button class="btn btn-primary btn-lg rounded-pill ms-2"
+                            type="button"
+                            style="min-width: 56px;"
+                            @onclick="SendMessage"
+                            disabled="@string.IsNullOrWhiteSpace(CurrentMessage)"
+                            aria-label="Send"
+                            title="Send your question">
+                      Send
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+
+
+            @* Status information *@
+            @if (!string.IsNullOrEmpty(StatusMessage))
+            {
+              <div class="alert alert-info mt-3 small">
+                @StatusMessage
+              </div>
+            }
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+@code {
+    private string CurrentMessage = "";
+    private bool IsProcessing = false;
+    private string StatusMessage = "";
+    private List<ChatMessage> ChatHistory = new List<ChatMessage>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Test services on page load
+        StatusMessage = "Testing service connections...";
+        StateHasChanged();
+        
+        var servicesOk = await ChatService.TestServicesAsync();
+        if (servicesOk)
+        {
+            StatusMessage = "✅ All services connected successfully! Ready to chat.";
+        }
+        else
+        {
+            StatusMessage = "⚠️ Some services may be unavailable. Please ensure Qdrant, Embedding Server, and Ollama are running.";
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(CurrentMessage) || IsProcessing)
+            return;
+
+        var userMessage = CurrentMessage.Trim();
+        CurrentMessage = "";
+        
+        // Add user message to history
+        ChatHistory.Add(new ChatMessage { Content = userMessage, IsUser = true });
+        
+        IsProcessing = true;
+        StatusMessage = "";
+        StateHasChanged();
+
+        try
+        {
+            // Scroll to bottom after adding user message
+            await Task.Delay(100);
+            await InvokeAsync(ScrollToBottom);
+
+            // Get response from chat service
+            var response = await ChatService.ProcessUserQueryAsync(userMessage);
+            
+            // Add bot response to history
+            var botMessage = new ChatMessage 
+            { 
+                Content = response.BotResponse, 
+                IsUser = false, 
+                IsError = response.IsError,
+                RelevantDocuments = response.RelevantDocuments
+            };
+            
+            ChatHistory.Add(botMessage);
+        }
+        catch (Exception ex)
+        {
+            ChatHistory.Add(new ChatMessage 
+            { 
+                Content = $"An error occurred: {ex.Message}", 
+                IsUser = false, 
+                IsError = true 
+            });
+        }
+        finally
+        {
+            IsProcessing = false;
+            StateHasChanged();
+            
+            // Scroll to bottom after adding response
+            await Task.Delay(100);
+            await InvokeAsync(ScrollToBottom);
+        }
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !e.ShiftKey)
+        {
+            await SendMessage();
+        }
+    }
+
+    private async Task ScrollToBottom()
+    {
+        await InvokeAsync(() =>
+        {
+            // This will be handled by JavaScript
+        });
+    }
+
+    public class ChatMessage
+    {
+        public string Content { get; set; } = "";
+        public bool IsUser { get; set; }
+        public bool IsError { get; set; }
+        public List<SearchResult>? RelevantDocuments { get; set; }
+    }
+}

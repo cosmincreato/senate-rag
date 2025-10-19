@@ -1,0 +1,39 @@
+@page "/"
+
+<PageTitle>NLP Senat</PageTitle>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h3>Quick Start</h3>
+            </div>
+            <div class="card-body">
+                <p>Get started with processing data:</p>
+                <ol>
+                    <li>Ensure the Python embedding server is running</li>
+                    <li>Start the Qdrant vector database</li>
+                    <li>Go to <a href="/dataprocessing">Data Processing</a></li>
+                    <li>Test OCR processor</li>
+                    <li>Run data setup process</li>
+                </ol>
+                <a href="/dataprocessing" class="btn btn-primary">Start Processing</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <h2>System Requirements</h2>
+        <div class="alert alert-info">
+            <h4>Prerequisites</h4>
+            <ul>
+                <li><strong>Python Environment:</strong> Python 3.8+ with required packages (uvicorn, sentence-transformers, etc.)</li>
+                <li><strong>Embedding Server:</strong> Must be running on http://localhost:8000</li>
+                <li><strong>Qdrant Database:</strong> Vector database running on localhost:6334</li>
+                <li><strong>.NET Runtime:</strong> .NET 8.0 or newer</li>
+            </ul>
+        </div>
+    </div>
+</div>

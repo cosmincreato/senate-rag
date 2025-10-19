@@ -1,0 +1,152 @@
+@page "/dataprocessing"
+@rendermode InteractiveServer
+@using ProiectSenatCore
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Data Processing</PageTitle>
+
+<div class="dp-bg">
+    <div class="container py-5 d-flex flex-column align-items-center">
+        <div class="glass-card mb-4 w-100" style="max-width: 800px;">
+            <div class="glass-card-header d-flex align-items-center justify-content-between">
+                <h2 class="mb-0">Data Processing</h2>
+            </div>
+            <div class="glass-card-body">
+                <p class="text-muted mb-4">Pagina pentru initializarea datelor inainte de a folosi aplicatia.</p>
+                
+                <div class="d-flex flex-column gap-3">
+                    <button class="btn btn-outline-info btn-lg fw-bold" @onclick="TestOcrProcessor" disabled="@isProcessing">
+                        <i class="bi bi-search"></i> Test OCR Processor
+                    </button>
+                    
+                    <button class="btn btn-gradient-success btn-lg fw-bold" @onclick="StartDataSetup" disabled="@isProcessing">
+                        @if (isProcessing)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                            <span>Processing...</span>
+                        }
+                        else
+                        {
+                            <span><i class="bi bi-play-circle"></i> Start Data Setup</span>
+                        }
+                    </button>
+                </div>
+
+                @if (!string.IsNullOrEmpty(currentStatus))
+                {
+                    <div class="alert alert-info mt-4">
+                        <strong>Status:</strong> @currentStatus
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(lastTestResult))
+                {
+                    <div class="alert @(lastTestSuccess ? "alert-success" : "alert-danger") mt-2">
+                        <strong>OCR Test:</strong> @lastTestResult
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="glass-card w-100" style="max-width: 800px;">
+            <div class="glass-card-header d-flex align-items-center justify-content-between">
+                <h3 class="mb-0">Log Output</h3>
+                <button class="btn btn-sm btn-outline-light" @onclick="ClearLogs" title="Clear logs">
+                    <i class="bi bi-trash"></i> Clear
+                </button>
+            </div>
+            <div class="glass-card-body log-area">
+                <div id="logOutput" class="log-output">
+                    @foreach (var log in logMessages)
+                    {
+                        <div class="log-entry">@log</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private DataProcessingService? dataService;
+    private bool isProcessing = false;
+    private string currentStatus = "";
+    private string lastTestResult = "";
+    private bool lastTestSuccess = false;
+    private int projectCount = 0;
+    private List<string> logMessages = new();
+
+    protected override void OnInitialized()
+    {
+        dataService = new DataProcessingService();
+        dataService.ProgressUpdated += OnProgressUpdated;
+        dataService.LogMessageReceived += OnLogMessageReceived;
+    }
+
+    private async void OnProgressUpdated(string status)
+    {
+        currentStatus = status;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async void OnLogMessageReceived(string message)
+    {
+        logMessages.Add($"[{DateTime.Now:HH:mm:ss}] {message}");
+        if (logMessages.Count > 100) logMessages.RemoveAt(0);
+        await InvokeAsync(StateHasChanged);
+        await InvokeAsync(async () =>
+        {
+            await JSRuntime.InvokeVoidAsync("scrollToBottom", "logOutput");
+        });
+    }
+
+    private async Task TestOcrProcessor()
+    {
+        if (dataService == null) return;
+        currentStatus = "Testing OCR Processor...";
+        var result = dataService.TestOcrProcessor();
+        lastTestResult = result.Message;
+        lastTestSuccess = result.Success;
+        currentStatus = "";
+        StateHasChanged();
+    }
+
+    private async Task StartDataSetup()
+    {
+        if (dataService == null) return;
+        isProcessing = true;
+        currentStatus = "Starting data setup...";
+        StateHasChanged();
+
+        try
+        {
+            var success = await dataService.DataSetupAsync();
+            projectCount = dataService.GetProjectCount();
+            currentStatus = success ? "Data setup completed successfully!" : "Data setup failed!";
+        }
+        catch (Exception ex)
+        {
+            currentStatus = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ClearLogs()
+    {
+        logMessages.Clear();
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        if (dataService != null)
+        {
+            dataService.ProgressUpdated -= OnProgressUpdated;
+            dataService.LogMessageReceived -= OnLogMessageReceived;
+        }
+    }
+}
