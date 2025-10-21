@@ -1,4 +1,6 @@
-﻿namespace ProiectSenatCore;
+﻿using ProiectSenatCore.Embedding;
+
+namespace ProiectSenatCore;
 
 public class ChatService
 {
@@ -80,7 +82,7 @@ public class ChatService
         }
     }
 
-    private string BuildContextFromResults(List<SearchResult> results)
+    public string BuildContextFromResults(List<SearchResult> results)
     {
         if (!results.Any()) return "";
 
