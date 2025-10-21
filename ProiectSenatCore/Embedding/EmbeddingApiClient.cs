@@ -1,6 +1,6 @@
 using System.Net.Http.Json;
 
-namespace ProiectSenatCore
+namespace ProiectSenatCore.Embedding
 {
     public class EmbeddingApiClient
     {

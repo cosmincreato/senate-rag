@@ -10,7 +10,6 @@
     <ProjectReference Include="../ProiectSenatCore/ProiectSenatCore.csproj" />
   </ItemGroup>
 
-  <!-- Copy tessdata files to output directory -->
   <ItemGroup>
     <None Include="tessdata/**/*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
