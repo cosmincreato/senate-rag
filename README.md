@@ -1,70 +1,108 @@
-# Proiect Senat
+# Senate RAG (Proiect Senat)
 
-![alt text](https://i.imgur.com/5FPuxzi.png)
+![Project banner](https://i.imgur.com/5FPuxzi.png)
 
-Proiect Senat is a Retrieval-Augmented Generation (RAG) platform developed during my Romanian Senate internship. It ingests legislative acts, builds dense embeddings, and exposes a private LLM experience that can answer questions with provenance. The stack combines .NET 8, Python, Qdrant, and Ollama so the entire workflow runs locally.
+Senate RAG is a retrieval‑augmented generation (RAG) stack purpose‑built for Romanian legislative documents. It ingests Senate acts, generates multilingual dense embeddings, stores them in a Vector Database, and serves answers through a local LLM with full privacy. Everything runs on your machine via Docker, no cloud calls required.
 
----
-
-## Highlights
-
-- **Legal-focused RAG pipeline:** cleans, chunks, and embeds Romanian Senate documents with [`sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`](https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2).
-- **Deterministic deployment:** Docker Compose brings up the ASP.NET backend, embedding server, MCP tools, and Ollama runtime, while Qdrant runs on Linux/WSL for storage reliability.
-- **IDE-ready tooling:** FastMCP server exposes `ask_senat` and `llm_generate`, enabling direct consumption from Cursor, Claude Desktop, or Windsurf.
-- **Privacy by design:** no cloud calls; every component runs offline, making it safe for sensitive legal corpora.
+Built originally during an internship with the Romanian Senate, the project is now packaged for repeatable, production‑grade deployments with health checks, isolated services, and clear operational boundaries.
 
 ---
 
-## Getting Started
+## Why it’s useful
 
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/cosmincreato/proiectSenat.git
-cd proiectSenat
-```
-
-### 2. Qdrant Vector Database Setup
-
-**Recommended:** Use Docker to run Qdrant locally.
-
-> **Important:** On Windows, you **must use WSL2 (Windows Subsystem for Linux)** for reliable Qdrant storage. Native Windows filesystems may cause corruption and zero-byte files.
-
-#### 🪟 **Windows: How to Install WSL2 and Ubuntu**
-
-1. **Open PowerShell as Administrator**
-
-2. **Install WSL2 and Ubuntu:**
-
-   ```powershell
-   wsl --install
-   ```
-
-3. **After restart, open Ubuntu from the Start Menu.**
-   - This opens a full Linux terminal.
+- Answers questions about Romanian legal documents with cited sources
+- Fully offline by design (Ollama, embeddings, vector DB, and API all local)
+- Multilingual embeddings for robust Romanian text handling
 
 ---
 
-#### **Linux/MacOS/WSL2: Setup Docker and Qdrant**
+## Architecture
 
-1. **Update and install Docker:**
-   ```bash
-   sudo apt update
-   sudo apt install docker.io
-   sudo usermod -aG docker $USER
-   # Close and reopen your Ubuntu terminal so Docker permissions take effect
-   ```
+The stack is orchestrated via Docker Compose:
 
-#### Start Qdrant Server
+- Ollama (LLM runtime)
+- Embedding API (FastAPI + Sentence Transformers)
+- ASP.NET Core backend and UI
+- MCP server (Model Context Protocol) for IDE integration
+- Qdrant (vector database) runs separately (recommended on Linux or WSL2 on Windows)
+
+Key ports:
+
+- Backend UI/API: http://localhost:5206
+- Embedding API: http://localhost:8000
+- Ollama API: http://localhost:11434
+- Qdrant REST: http://localhost:6333 (external)
+- Qdrant gRPC: http://localhost:6334 (external)
+
+---
+
+## Features
+
+- Legal‑focused RAG pipeline
+
+  - Embeddings model: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` (384‑dim)
+  - Vector store: Qdrant with cosine distance
+  - File‑name–to‑metadata inference tailored to Romanian legal corpora
+
+- Deterministic deployment
+
+  - Dockerized services with health checks and explicit dependencies
+  - Persistent volumes for models and data
+  - Environment‑driven configuration
+
+- Privacy by default
+
+  - All components run locally; no external network calls are required
+
+- IDE‑ready (MCP)
+  - Ask questions and get answers with citations via MCP tools:
+    - ask_senat → full RAG chain
+    - llm_generate → direct LLM prompt (no retrieval)
+    - count_documents → Qdrant counts (with optional year filter)
+
+---
+
+## What’s in the repo
+
+- `docker-compose.yml` – Orchestrates Ollama, Embedding API, Backend, MCP server
+- `Dockerfile.backend` – Builds the ASP.NET Core backend
+- `Dockerfile.embed_server` – Builds the FastAPI embedding service
+- `Dockerfile.mcp_server` – Builds the MCP server image
+- `embed_server.py` – Embedding API (FastAPI) with:
+  - `POST /embed` (single text)
+  - `POST /embed-batch` (directory ingestion → writes `embeddings.json`)
+  - `GET /` (health + model info)
+- `mcp_server.py` – Exposes MCP tools that proxy backend endpoints:
+  - `/api/mcp/generate`, `/api/tools/llm/generate`, `/api/tools/qdrant/count`
+- `qdrant_collection.py` – Creates/resets a Qdrant collection (`proiect-senat`, 384‑dim)
+- `ProiectSenatCore/`, `ProiectSenatUI/` – ASP.NET Core application and data directories (mounted into the backend container:
+  - `input/`, `output/`, `chunked_output/`, `tessdata/`, `tools.json`, `embeddings.json`)
+
+---
+
+## Production‑readiness at a glance
+
+- Containerized services with explicit health checks and startup ordering
+- Separate vector database process (recommended on Linux/WSL2 for reliable storage)
+- No hidden state in containers; state lives in:
+  - Qdrant (external service)
+  - Mounted volumes (e.g., `embeddings.json`, input/output folders)
+- Pinned Python dependencies for the MCP server for repeatable builds
+- Clear, environment‑driven configuration
+
+---
+
+## Quick start
+
+1. Start Qdrant (recommended on Linux/WSL2)
+
+On Windows, use WSL2 (native Windows FS can cause corruption/zero‑byte files with Qdrant).
 
 ```bash
 docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant
 ```
 
-- **REST API:** [http://localhost:6333](http://localhost:6333)
-- **gRPC API:** [http://localhost:6334](http://localhost:6334)
-
-**Optional (persistent storage):**
+Optional persistent storage:
 
 ```bash
 docker run -p 6333:6333 -p 6334:6334 \
@@ -72,67 +110,95 @@ docker run -p 6333:6333 -p 6334:6334 \
   qdrant/qdrant
 ```
 
-#### Create a Collection
-
-You can create a collection using:
+Create/reset the collection (dimension 384 for MiniLM):
 
 ```bash
 python3 qdrant_collection.py
 ```
 
-#### Populate DB
+2. Bring up the stack (Ollama, Embedding API, Backend, MCP)
 
-Run the Data Setup to let the Qdrant DB ingest the points.
+```bash
+docker-compose up -d
+```
 
-### 3. Docker Setup
+Pull an Ollama model (once):
 
-The entire project can be run using Docker Compose, which orchestrates all services (Ollama, embedding server, backend, and MCP server) in isolated containers. **Note:** Qdrant should be running separately (e.g., in WSL) and will be accessed via `host.docker.internal`.
+```bash
+docker exec -it proiect-senat-ollama ollama pull llama3:latest
+```
 
-### Prerequisites
+3. Prepare and embed your documents
 
-- [Docker](https://www.docker.com/get-started) and [Docker Compose](https://docs.docker.com/compose/install/) installed
-- At least 8GB of RAM (more recommended for LLM inference)
-- Sufficient disk space for models and data
+- Place your pre‑chunked text files into: `./ProiectSenatUI/chunked_output/`
+- File names should encode metadata (the embedding server infers year, law number, code, chunk), for example:
+  - `<YY><LLLL><CODE>_chunk<N>.txt`
+  - The service infers:
+    - `an` (year) from `YY` (19xx if `YY` starts with “9”, else 20xx)
+    - `numar_lege`, `cod_document`, `chunk`, and `filename`
 
-### Quick Start
+Generate embeddings:
 
-1. **Start all services:**
+```bash
+curl -X POST http://localhost:8000/embed-batch \
+  -H "Content-Type: application/json" \
+  -d '{"input_dir": "/app/chunked_output"}'
+```
 
-   ```bash
-   docker-compose up -d
-   ```
+This writes `embeddings.json` next to the input directory (already volume‑mounted into the backend container).
 
-This will:
+4. Ingest into Qdrant
 
-- Pull and start Ollama LLM service
-- Build and start the Python embedding server
-- Build and start the ASP.NET Core backend
-- Build and start the MCP server (optional)
+If your backend workflow handles ingestion automatically from `embeddings.json`, you’re done.
+Otherwise, here’s a minimal ingestion example you can run locally:
 
-**Note:** Make sure Qdrant is already running (e.g., in WSL) on ports 6333/6334. The backend will connect to it via `host.docker.internal`.
+```python
+# ingest_embeddings.py
+import json
+from qdrant_client import QdrantClient
+from qdrant_client.models import PointStruct
 
-2. **Pull an Ollama model (required before first use):**
+client = QdrantClient(host="localhost", port=6333)
+collection = "proiect-senat"
 
-   ```bash
-   docker exec -it proiect-senat-ollama ollama pull llama3:latest
-   ```
+with open("ProiectSenatUI/embeddings.json", encoding="utf-8") as f:
+    data = json.load(f)
 
-3. **Access the services:**
+points = [
+    PointStruct(id=entry["id"], vector=entry["vector"], payload=entry["payload"])
+    for entry in data
+]
 
-   - **Backend UI:** http://localhost:5206
-   - **Embedding API:** http://localhost:8000
-   - **Qdrant REST API:** http://localhost:6333
-   - **Ollama API:** http://localhost:11434
+client.upsert(collection_name=collection, points=points)
+print(f"Upserted {len(points)} points.")
+```
 
-### Environment Variables
+```bash
+python3 ingest_embeddings.py
+```
 
-You can customize the Docker setup by creating a `.env` file in the project root:
+5. Ask questions
+
+- Backend UI/API: http://localhost:5206
+- MCP (IDE integration): run the MCP container (already started by Compose) or run locally, then call `ask_senat`.
+
+Example MCP tool call (conceptual):
+
+```
+ask_senat(question="Care este procedura pentru ...?", top_k=5)
+```
+
+---
+
+## Configuration
+
+Create a `.env` file in the project root to override defaults:
 
 ```env
-# Ollama configuration
+# Ollama
 OLLAMA_BASE_URL=http://ollama:11434
 
-# Qdrant configuration (running separately in WSL)
+# Qdrant (external)
 QDRANT_HOST=host.docker.internal
 QDRANT_PORT=6334
 QDRANT_COLLECTION=proiect-senat
@@ -140,73 +206,62 @@ QDRANT_COLLECTION=proiect-senat
 # Embedding API
 EMBEDDING_API_URL=http://embed_server:8000
 
-# Backend configuration
+# Backend
 ASPNETCORE_ENVIRONMENT=Development
+ASPNETCORE_URLS=http://+:5206
+
+# MCP server
+SENAT_API_BASE=http://backend:5206
+SENAT_DEFAULT_MODEL=llama3:latest
+SENAT_API_SSL_VERIFY=false
+SENAT_API_TIMEOUT=120
 ```
-
-### Persistent Data
-
-The following data is persisted in Docker volumes:
-
-- **Ollama models:** Docker volume `ollama_data` (LLM models)
-- **Application data:** `./ProiectSenatUI/input/`, `./ProiectSenatUI/output/`, etc.
-
-**Note:** Qdrant storage is managed separately in your WSL environment.
-
-### Building Individual Services
-
-To rebuild a specific service after code changes:
-
-```bash
-# Rebuild and restart the backend
-docker-compose up -d --build backend
-
-# Rebuild and restart the embedding server
-docker-compose up -d --build embed_server
-```
-
-### Troubleshooting
-
-- **Qdrant connection issues:** Make sure Qdrant is running in WSL and accessible on ports 6333/6334. The backend connects via `host.docker.internal`.
-- **Ollama model not found:** Make sure you've pulled a model: `docker exec -it proiect-senat-ollama ollama pull llama3:latest`
-- **Port conflicts:** If ports are already in use, modify the port mappings in `docker-compose.yml`
-- **Out of memory:** Increase Docker's memory limit in Docker Desktop settings
-- **Service health checks failing:** Check logs with `docker-compose logs <service-name>`
 
 ---
 
-## Run the MCP Server (optional)
+## Embedding API details
 
-If you want to chat with the Romanian Senate knowledge base straight from an MCP-compatible IDE (Cursor, Claude Desktop, Windsurf, etc.), spin up the included MCP server:
+- Model: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` (384‑dim)
+- Endpoints:
+  - `POST /embed` → `{ "text": "..." }` → `{ "embedding": [...] }`
+  - `POST /embed-batch` → `{ "input_dir": "/path/in/container" }` → writes `embeddings.json`
+  - `GET /` → health and model info
 
-1. Make sure Python 3.14 is available locally, then create/activate an isolated environment (recommended):
-   ```powershell
-   py -3.14 -m venv .venv
-   .\.venv\Scripts\activate
-   ```
-2. Install the MCP-specific dependencies (they are pinned to versions known to work on Python 3.14):
-   ```powershell
-   python -m pip install --upgrade pip
-   python -m pip install -r requirements-mcp.txt
-   ```
-   > If you skip this step, you will see `ModuleNotFoundError: No module named "mcp"` when launching the server.
-3. Make sure the ASP.NET backend is running (so `http://localhost:5206` is reachable).
-4. Start the server:
-   ```bash
-   python mcp_server.py
-   ```
-5. Point your MCP client to the script. The default config assumes the backend runs on `http://localhost:5206`.
+Returned payload format (per item) in `embeddings.json`:
 
-### Environment variables
+```json
+{
+  "id": 0,
+  "vector": [ ... 384 floats ... ],
+  "payload": {
+    "text": "…",
+    "an": 2024,
+    "numar_lege": "Lege/2024",
+    "cod_document": "XYZ",
+    "filename": "241234XYZ",
+    "chunk": 3
+  }
+}
+```
 
-| Variable               | Default                 | Description                                         |
-| ---------------------- | ----------------------- | --------------------------------------------------- |
-| `SENAT_API_BASE`       | `http://localhost:5206` | Base URL of the ASP.NET backend                     |
-| `SENAT_API_SSL_VERIFY` | `false`                 | Set to `true` to enforce TLS certificate validation |
-| `SENAT_DEFAULT_MODEL`  | `llama3:latest`         | Default model passed to the tooling endpoints       |
-| `SENAT_API_TIMEOUT`    | `120`                   | HTTP timeout (seconds) for backend calls            |
+---
 
-The server exposes two MCP tools:
+## MCP tools
 
-- `ask_senat` – runs the full RAG chain (`/api/mcp/generate`) and returns rich metadata (sources + timings).
-- `llm_generate` – calls `/api/tools/llm/generate` for raw prompting without retrieval.
+The MCP server proxies the backend’s RAG and utility endpoints:
+
+- `ask_senat(question, model="llama3:latest", top_k=5)` → `/api/mcp/generate`
+- `llm_generate(prompt, model="llama3:latest", max_tokens=512, temperature=0.0)` → `/api/tools/llm/generate`
+- `count_documents(year=None)` → `/api/tools/qdrant/count`
+
+Use it from MCP‑compatible tools/IDEs (Cursor, Claude Desktop, Windsurf, etc.).
+
+---
+
+## Troubleshooting
+
+- Qdrant on Windows: Use WSL2 + Linux filesystem
+- Model missing: `docker exec -it proiect-senat-ollama ollama pull llama3:latest`
+- Health checks: `docker-compose ps` and `docker-compose logs <service>`
+- Port conflicts: adjust in `docker-compose.yml`
+- Memory pressure: increase Docker Desktop resource limits (8 GB+ recommended)

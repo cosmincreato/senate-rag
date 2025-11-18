@@ -4,15 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c15768dd-c454-4740-bcfe-8f1bef5d3034" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/proiectSenat.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/proiectSenat.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mcp_server.py" beforeDir="false" afterPath="$PROJECT_DIR$/mcp_server.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements-mcp.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
-    </list>
+    <list default="true" id="c15768dd-c454-4740-bcfe-8f1bef5d3034" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -79,7 +71,7 @@
       <workItem from="1758261635311" duration="5469000" />
       <workItem from="1759319663709" duration="606000" />
       <workItem from="1759388567498" duration="5723000" />
-      <workItem from="1763470168425" duration="5726000" />
+      <workItem from="1763470168425" duration="6029000" />
     </task>
     <servers />
   </component>
