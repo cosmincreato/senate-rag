@@ -1,4 +1,5 @@
 ﻿using ProiectSenatCore.Embedding;
+using ProiectSenatCore.Qdrant;
 
 namespace ProiectSenatCore;
 
@@ -99,7 +100,7 @@ public class ChatService
         return contextBuilder.ToString();
     }
 
-    private string BuildPromptWithContext(string userQuery, string context)
+    public string BuildPromptWithContext(string userQuery, string context)
     {
         return $$"""
                  Ești un asistent juridic specializat în documente legale românești din cadrul Senatului.

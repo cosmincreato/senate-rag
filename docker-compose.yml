@@ -1,0 +1,112 @@
+services:
+  # Note: Qdrant is running separately in WSL, so it's not included here.
+  # The backend connects to it via host.docker.internal
+
+  # Ollama LLM service
+  ollama:
+    image: ollama/ollama:latest
+    container_name: proiect-senat-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - senat-network
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # Uncomment to automatically pull a model on startup
+    # command: >
+    #   sh -c "ollama serve & sleep 5 && ollama pull llama3:latest && wait"
+
+  # Python embedding server
+  embed_server:
+    build:
+      context: .
+      dockerfile: Dockerfile.embed_server
+    container_name: proiect-senat-embed
+    ports:
+      - "8000:8000"
+    networks:
+      - senat-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 -O- http://localhost:8000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # Mount input/output directories if needed
+    volumes:
+      - ./ProiectSenatUI/input:/app/input:ro
+      - ./ProiectSenatUI/chunked_output:/app/chunked_output:ro
+      - ./ProiectSenatUI/embeddings.json:/app/embeddings.json
+
+  # ASP.NET Core backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: proiect-senat-backend
+    ports:
+      - "5206:5206"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5206
+      - EMBEDDING_API_URL=http://embed_server:8000
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - QDRANT_HOST=host.docker.internal
+      - QDRANT_PORT=6334
+      - QDRANT_COLLECTION=proiect-senat
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      ollama:
+        condition: service_healthy
+      embed_server:
+        condition: service_healthy
+    networks:
+      - senat-network
+    volumes:
+      - ./ProiectSenatUI/input:/app/input
+      - ./ProiectSenatUI/output:/app/output
+      - ./ProiectSenatUI/chunked_output:/app/chunked_output
+      - ./ProiectSenatUI/tessdata:/app/tessdata
+      - ./ProiectSenatUI/tools.json:/app/tools.json
+      - ./ProiectSenatUI/embeddings.json:/app/embeddings.json
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:5206/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # MCP server (optional - can run separately)
+  mcp_server:
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp_server
+    container_name: proiect-senat-mcp
+    environment:
+      - SENAT_API_BASE=http://backend:5206
+      - SENAT_DEFAULT_MODEL=llama3:latest
+      - SENAT_API_SSL_VERIFY=false
+    depends_on:
+      - backend
+    networks:
+      - senat-network
+    # MCP servers typically use stdio transport, so this may need adjustment
+    # For now, we'll expose it but you may need to run it separately
+    stdin_open: true
+    tty: true
+
+volumes:
+  ollama_data:
+    driver: local
+
+networks:
+  senat-network:
+    driver: bridge
+

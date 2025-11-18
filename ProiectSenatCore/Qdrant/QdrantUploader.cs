@@ -1,7 +1,7 @@
 using Qdrant.Client.Grpc;
 using Struct = Qdrant.Client.Grpc.Struct;
 
-namespace ProiectSenatCore;
+namespace ProiectSenatCore.Qdrant;
 
 public class QdrantUploader
 {

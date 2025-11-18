@@ -7,7 +7,7 @@ public class OllamaService
 {
     private static readonly HttpClient HttpClient = new HttpClient()
     {
-        Timeout = TimeSpan.FromMinutes(10)
+        Timeout = TimeSpan.FromMinutes(30) // Increased for slow PCs
     };
     private readonly string _baseUrl;
 

@@ -6,6 +6,7 @@ namespace ProiectSenatCore
     using System.IO;
     using System.Threading.Tasks;
     using ProiectSenatCore.Embedding;
+    using ProiectSenatCore.Qdrant;
 
     public class DataProcessingService
     {

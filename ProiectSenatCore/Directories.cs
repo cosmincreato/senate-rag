@@ -19,7 +19,4 @@ public static class Directories
     
     public static readonly string ChunkedTxtDirPath =
         Path.Combine(BaseDirPath, "chunked_output");
-    
-    public static readonly string ModelsDirPath =
-        Path.Combine(BaseDirPath, "models");
 }

@@ -5,6 +5,8 @@ namespace ProiectSenatCore.Embedding
     public class EmbeddingApiClient
     {
         private static readonly HttpClient HttpClient = new HttpClient();
+        private static readonly string EmbeddingApiUrl = 
+            Environment.GetEnvironmentVariable("EMBEDDING_API_URL") ?? "http://localhost:8000";
 
         public static async Task<bool> EmbedBatchAsync(string inputDirectory)
         {
@@ -20,7 +22,7 @@ namespace ProiectSenatCore.Embedding
             var payload = new { input_dir = inputDirectory };
             try
             {
-                var response = await HttpClient.PostAsJsonAsync("http://localhost:8000/embed-batch", payload);
+                var response = await HttpClient.PostAsJsonAsync($"{EmbeddingApiUrl}/embed-batch", payload);
                 if (response.IsSuccessStatusCode)
                 {
                     string responseText = await response.Content.ReadAsStringAsync();
@@ -52,7 +54,7 @@ namespace ProiectSenatCore.Embedding
             var payload = new { text };
             try
             {
-                var response = await HttpClient.PostAsJsonAsync("http://localhost:8000/embed", payload);
+                var response = await HttpClient.PostAsJsonAsync($"{EmbeddingApiUrl}/embed", payload);
                 if (response.IsSuccessStatusCode)
                 {
                     var result = await response.Content.ReadFromJsonAsync<EmbedResponse>();

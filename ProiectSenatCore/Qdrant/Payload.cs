@@ -1,4 +1,4 @@
-namespace ProiectSenatCore;
+namespace ProiectSenatCore.Qdrant;
 
 using System.Text.Json.Serialization;
 

@@ -14,4 +14,12 @@
     <None Include="tessdata/**/*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Remove="tools.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="tools.json" />
+  </ItemGroup>
+
 </Project>

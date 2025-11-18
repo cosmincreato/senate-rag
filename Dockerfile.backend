@@ -1,0 +1,54 @@
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Copy solution and project files
+COPY proiectSenat.sln .
+COPY ProiectSenatCore/ProiectSenatCore.csproj ProiectSenatCore/
+COPY ProiectSenatUI/ProiectSenatUI.csproj ProiectSenatUI/
+
+# Restore dependencies
+RUN dotnet restore
+
+# Copy all source files
+COPY ProiectSenatCore/ ProiectSenatCore/
+COPY ProiectSenatUI/ ProiectSenatUI/
+
+# Build the application
+WORKDIR /src/ProiectSenatUI
+RUN dotnet build -c Release -o /app/build
+
+# Publish the application
+RUN dotnet publish -c Release -o /app/publish
+
+# Runtime stage
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+
+# Install system dependencies for Tesseract OCR
+RUN apt-get update && apt-get install -y \
+    tesseract-ocr \
+    tesseract-ocr-ron \
+    libtesseract-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy published application
+COPY --from=build /app/publish .
+
+# Copy tessdata files
+COPY ProiectSenatUI/tessdata/ ./tessdata/
+
+# Expose port
+EXPOSE 5206
+
+# Install wget for health checks
+RUN apt-get update && apt-get install -y \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set environment variables
+ENV ASPNETCORE_URLS=http://+:5206
+ENV ASPNETCORE_ENVIRONMENT=Production
+
+# Run the application
+ENTRYPOINT ["dotnet", "ProiectSenatUI.dll"]
+

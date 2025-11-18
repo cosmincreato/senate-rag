@@ -1,6 +1,6 @@
 using Qdrant.Client.Grpc;
 
-namespace ProiectSenatCore;
+namespace ProiectSenatCore.Qdrant;
 
 public class QdrantSearchService
 {
@@ -53,6 +53,51 @@ public class QdrantSearchService
         {
             Console.WriteLine($"Error searching Qdrant: {ex.Message}");
             return new List<SearchResult>();
+        }
+    }
+
+    public async Task<int> CountAllAsync() => await CountPointsAsync();
+
+    public async Task<int> CountByYearAsync(int year)
+    {
+        var filter = new Filter();
+        filter.Must.Add(new Condition
+        {
+            Field = new FieldCondition
+            {
+                Key = "an",
+                Match = new Match
+                {
+                    Integer = year
+                }
+            }
+        });
+
+        return await CountPointsAsync(filter);
+    }
+
+    private async Task<int> CountPointsAsync(Filter? filter = null)
+    {
+        try
+        {
+            var countRequest = new CountPoints
+            {
+                CollectionName = _collectionName,
+                Exact = true
+            };
+
+            if (filter != null)
+            {
+                countRequest.Filter = filter;
+            }
+
+            var response = await _client.Points.CountAsync(countRequest);
+            return (int)(response?.Result?.Count ?? 0);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error counting points in Qdrant: {ex.Message}");
+            return 0;
         }
     }
 

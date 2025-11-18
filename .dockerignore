@@ -1,0 +1,49 @@
+# Build outputs
+**/bin/
+**/obj/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE files
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Documentation
+*.md
+README*
+
+# Test files
+**/test/
+**/tests/
+*test*.py
+*test*.cs
+
+# Environment files
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+

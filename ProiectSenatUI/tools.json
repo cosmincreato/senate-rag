@@ -1,0 +1,44 @@
+{
+  "tools": [
+    {
+      "id": "qdrant_search",
+      "name": "Vector Search",
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/tools/qdrant/search"
+      },
+      "auth_scope": "vector:read",
+      "description": "Caută documente similare în Qdrant pe baza unui text sau vector."
+    },
+    {
+      "id": "qdrant_count",
+      "name": "Vector Count",
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/tools/qdrant/count"
+      },
+      "auth_scope": "vector:count",
+      "description": "Numără documentele din Qdrant care respectă anumite filtre."
+    },
+    {
+      "id": "embedding_create",
+      "name": "Embedding Generator",
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/tools/embeddings"
+      },
+      "auth_scope": "embed:write",
+      "description": "Generează embeddings pentru texte date."
+    },
+    {
+      "id": "llm_generate",
+      "name": "LLM Text Generator",
+      "endpoint": {
+        "method": "POST",
+        "path": "/api/tools/llm/generate"
+      },
+      "auth_scope": "model:invoke",
+      "description": "Generează text pe baza unui prompt folosind un model LLM."
+    }
+  ]
+}
