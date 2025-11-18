@@ -1,15 +1,17 @@
 # Proiect Senat
 
-This project is developed as part of my internship at the Romanian Senate. It is a modern Retrieval-Augmented Generation pipeline designed to process and embed large legal corpora, enabling semantic search and contextually-aware responses with Large Language Models.
+![alt text](https://i.imgur.com/5FPuxzi.png)
 
-## ![alt text](https://i.imgur.com/5FPuxzi.png)
+Proiect Senat is a Retrieval-Augmented Generation (RAG) platform developed during my Romanian Senate internship. It ingests legislative acts, builds dense embeddings, and exposes a private LLM experience that can answer questions with provenance. The stack combines .NET 8, Python, Qdrant, and Ollama so the entire workflow runs locally.
 
-## Features
+---
 
-- **Text Chunking & Embedding**: Preprocesses and splits large documents, then maps sentences & paragraphs to a 384 dimensional dense vector space using the [`sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`](https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2) model.
-- **Embeddings Storage**: Stores embeddings and associated text segments in `embeddings.json` for downstream retrieval.
-- **RAG Workflow**: Enables retrieval of relevant text segments in response to user queries, providing augmented prompts to LLMs for improved answers.
-- **Ollama Integration**: Easily connect to local LLMs via Ollama for fully private, offline inference.
+## Highlights
+
+- **Legal-focused RAG pipeline:** cleans, chunks, and embeds Romanian Senate documents with [`sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`](https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2).
+- **Deterministic deployment:** Docker Compose brings up the ASP.NET backend, embedding server, MCP tools, and Ollama runtime, while Qdrant runs on Linux/WSL for storage reliability.
+- **IDE-ready tooling:** FastMCP server exposes `ask_senat` and `llm_generate`, enabling direct consumption from Cursor, Claude Desktop, or Windsurf.
+- **Privacy by design:** no cloud calls; every component runs offline, making it safe for sensitive legal corpora.
 
 ---
 
@@ -177,12 +179,23 @@ docker-compose up -d --build embed_server
 
 If you want to chat with the Romanian Senate knowledge base straight from an MCP-compatible IDE (Cursor, Claude Desktop, Windsurf, etc.), spin up the included MCP server:
 
-1. Make sure the ASP.NET backend is running (so `http://localhost:5206` is reachable).
-2. Start the server:
+1. Make sure Python 3.14 is available locally, then create/activate an isolated environment (recommended):
+   ```powershell
+   py -3.14 -m venv .venv
+   .\.venv\Scripts\activate
+   ```
+2. Install the MCP-specific dependencies (they are pinned to versions known to work on Python 3.14):
+   ```powershell
+   python -m pip install --upgrade pip
+   python -m pip install -r requirements-mcp.txt
+   ```
+   > If you skip this step, you will see `ModuleNotFoundError: No module named "mcp"` when launching the server.
+3. Make sure the ASP.NET backend is running (so `http://localhost:5206` is reachable).
+4. Start the server:
    ```bash
    python mcp_server.py
    ```
-3. Point your MCP client to the script. The default config assumes the backend runs on `http://localhost:5206`.
+5. Point your MCP client to the script. The default config assumes the backend runs on `http://localhost:5206`.
 
 ### Environment variables
 

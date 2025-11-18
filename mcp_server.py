@@ -32,8 +32,6 @@ REQUEST_TIMEOUT = float(os.environ.get("SENAT_API_TIMEOUT", "120"))
 
 server = FastMCP(
     "proiect-senat",
-    version="0.1.0",
-    description="Access the Romanian Senate RAG stack and local LLMs via MCP.",
 )
 
 
